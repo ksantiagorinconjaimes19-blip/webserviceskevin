@@ -3,81 +3,400 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reconocedor MNIST</title>
+    <title>Reconocedor MNIST | IA</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --card-bg: #ffffff;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+            --surface-soft: #f8fafc;
+            --success-bg: #ecfdf5;
+            --success-border: #a7f3d0;
+            --success-text: #065f46;
+            --error-bg: #fef2f2;
+            --error-border: #fecaca;
+            --error-text: #991b1b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-main);
+        }
+
+        .contenedor {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 440px;
+            border-radius: 20px;
+            padding: 32px 28px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .badge-ia {
+            display: inline-block;
+            background: #eef2ff;
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 999px;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .subtitulo {
+            font-size: 0.92rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        /* Zona de carga y vista previa */
+        .dropzone {
+            border: 2px dashed var(--border-color);
+            border-radius: 14px;
+            background: var(--surface-soft);
+            padding: 24px 16px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .dropzone:hover,
+        .dropzone.dragover {
+            border-color: var(--primary);
+            background: #eef2ff;
+        }
+
+        .dropzone.tiene-imagen {
+            border-style: solid;
+            border-color: #e2e8f0;
+            padding: 14px;
+        }
+
+        .icono-subida {
+            width: 44px;
+            height: 44px;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .texto-dropzone {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .hint-dropzone {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        #preview {
+            display: none;
+            max-width: 100%;
+            max-height: 180px;
+            border-radius: 10px;
+            object-fit: contain;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            background: #000;
+        }
+
+        .cambiar-img {
+            display: none;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .dropzone.tiene-imagen .cambiar-img {
+            display: inline-block;
+        }
+
+        /* Botón principal */
+        button[type="submit"] {
+            width: 100%;
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button[type="submit"]:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+
+        button[type="submit"]:active:not(:disabled) {
+            transform: scale(0.99);
+        }
+
+        button[type="submit"]:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* Spinner de carga */
+        .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255, 255, 255, 0.35);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: girar 0.75s linear infinite;
+        }
+
+        button.cargando .spinner {
+            display: inline-block;
+        }
+
+        @keyframes girar {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Tarjeta de resultados */
+        #resultado {
+            margin-top: 22px;
+            animation: aparecer 0.3s ease;
+        }
+
+        @keyframes aparecer {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tarjeta-exito {
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+            border-radius: 14px;
+            padding: 18px;
+            color: var(--success-text);
+        }
+
+        .etiqueta-resultado {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            opacity: 0.85;
+        }
+
+        .numero-grande {
+            font-size: 3.2rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin: 6px 0 12px;
+            color: #047857;
+        }
+
+        .barra-contenedor {
+            background: rgba(6, 95, 70, 0.15);
+            height: 8px;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .barra-progreso {
+            background: #10b981;
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.6s ease;
+        }
+
+        .texto-confianza {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .tarjeta-error {
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            color: var(--error-text);
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
 
-    <h1>Reconocedor de Números (IA)</h1>
-    <p>Sube una imagen de un número escrito a mano (0-9).</p>
+    <main class="contenedor">
+        <span class="badge-ia">Modelo Para Reconocer Numeros</span>
+        <h1>Reconocedor de Números</h1>
+        <p class="subtitulo">Sube o arrastra la imagen de un dígito escrito a mano (0 al 9) para clasificarlo.</p>
 
-    <form id="formulario">
-        <input type="file" id="inputImagen" accept="image/*" required>
-        
-        <div class="preview-caja">
-            <img id="preview" style="display: none;" alt="Previsualización">
-            <span id="textoPreview">Vista previa de la imagen</span>
-        </div>
+        <form id="formulario">
+            <input type="file" id="inputImagen" accept="image/*" hidden>
 
-        <button type="submit" id="btnEnviar">Analizar Imagen</button>
-    </form>
+            <div class="dropzone" id="dropzone">
+                <div id="placeholderDropzone">
+                    <svg class="icono-subida" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                    </svg>
+                    <p class="texto-dropzone">Haz clic o arrastra una imagen aquí</p>
+                    <span class="hint-dropzone">Formatos soportados: PNG, JPG, WEBP</span>
+                </div>
 
-    <div id="resultado"></div>
+                <img id="preview" alt="Previsualización del dígito">
+                <span class="cambiar-img">Haz clic para cambiar la imagen</span>
+            </div>
+
+            <button type="submit" id="btnEnviar" disabled>
+                <span class="spinner"></span>
+                <span id="textoBoton">Analizar Imagen</span>
+            </button>
+        </form>
+
+        <div id="resultado"></div>
+    </main>
 
     <script>
         const inputImagen = document.getElementById('inputImagen');
+        const dropzone = document.getElementById('dropzone');
+        const placeholderDropzone = document.getElementById('placeholderDropzone');
         const preview = document.getElementById('preview');
-        const textoPreview = document.getElementById('textoPreview');
         const formulario = document.getElementById('formulario');
         const btnEnviar = document.getElementById('btnEnviar');
+        const textoBoton = document.getElementById('textoBoton');
         const divResultado = document.getElementById('resultado');
 
-        // Mostrar la imagen apenas el usuario la selecciona
+        let archivoSeleccionado = null;
+
+        function cargarVistaPrevia(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                divResultado.innerHTML = `<div class="tarjeta-error">Por favor selecciona un archivo de imagen válido.</div>`;
+                return;
+            }
+
+            archivoSeleccionado = file;
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholderDropzone.style.display = 'none';
+                dropzone.classList.add('tiene-imagen');
+                btnEnviar.disabled = false;
+                divResultado.innerHTML = '';
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        // Clic en el área de carga
+        dropzone.addEventListener('click', () => inputImagen.click());
+
+        // Selección tradicional desde explorador de archivos
         inputImagen.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                    textoPreview.style.display = 'none';
-                    divResultado.innerHTML = ''; // Limpiar resultados anteriores
-                }
-                reader.readAsDataURL(file);
+            if (this.files[0]) {
+                cargarVistaPrevia(this.files[0]);
             }
         });
 
-        // Enviar la imagen al backend con Fetch
+        // Eventos Drag & Drop
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files[0]) {
+                cargarVistaPrevia(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Envío al backend Flask
         formulario.addEventListener('submit', async function(e) {
             e.preventDefault();
-            const file = inputImagen.files[0];
-            if (!file) return;
+            if (!archivoSeleccionado) return;
 
             btnEnviar.disabled = true;
-            btnEnviar.textContent = 'Procesando...';
+            btnEnviar.classList.add('cargando');
+            textoBoton.textContent = 'Analizando...';
             divResultado.innerHTML = '';
 
             const formData = new FormData();
-            formData.append('imagen', file);
+            formData.append('imagen', archivoSeleccionado);
 
             try {
-                // Al estar en el mismo servidor, usamos ruta relativa
                 const response = await fetch('/predecir', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
-                    divResultado.innerHTML = `¡Es un ${data.numero_predicho}! <br><small style="color: gray">Confianza: ${data.confianza}%</small>`;
+                    const confianza = parseFloat(data.confianza) || 0;
+                    divResultado.innerHTML = `
+                        <div class="tarjeta-exito">
+                            <div class="etiqueta-resultado">Dígito detectado</div>
+                            <div class="numero-grande">${data.numero_predicho}</div>
+                            <div class="barra-contenedor">
+                                <div class="barra-progreso" style="width: ${Math.min(confianza, 100)}%"></div>
+                            </div>
+                            <div class="texto-confianza">Confianza del modelo: ${data.confianza}%</div>
+                        </div>
+                    `;
                 } else {
-                    divResultado.innerHTML = `<span style="color: red">Error: ${data.error}</span>`;
+                    divResultado.innerHTML = `<div class="tarjeta-error">Error: ${data.error}</div>`;
                 }
             } catch (error) {
-                divResultado.innerHTML = `<span style="color: red">Error de conexión con el servidor.</span>`;
+                divResultado.innerHTML = `<div class="tarjeta-error">No se pudo conectar con el servidor Flask.</div>`;
             } finally {
                 btnEnviar.disabled = false;
-                btnEnviar.textContent = 'Analizar Imagen';
+                btnEnviar.classList.remove('cargando');
+                textoBoton.textContent = 'Analizar Imagen';
             }
         });
     </script>
